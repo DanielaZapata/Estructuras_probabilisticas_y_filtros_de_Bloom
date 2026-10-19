@@ -27,4 +27,17 @@ def agregar(self, elemento):
             self.bits[indice_byte] |= 1 << indice_bit # | es una asignación combinada con OR bit a bit 
         self.__n += 1
 
-        
+# ver si el elemento posiblemente está en el filtro
+
+def contiene(self, elemento):
+
+        for posicion in self._posiciones(elemento):
+
+            indice_byte = posicion // 8
+            indice_bit = posicion % 8
+
+            bit = (self.bits[indice_byte] >> indice_bit) & 1
+            if bit == 0:
+                return False
+
+        return True
