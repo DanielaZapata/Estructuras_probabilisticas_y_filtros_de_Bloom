@@ -15,3 +15,16 @@ def _posiciones(self, elemento):
 
         return posiciones
 
+
+# Agregar un elemento activando sus posiciones
+def agregar(self, elemento):
+
+        for posicion in self._posiciones(elemento):
+
+            indice_byte = posicion // 8
+            indice_bit = posicion % 8
+
+            self.bits[indice_byte] |= 1 << indice_bit # | es una asignación combinada con OR bit a bit 
+        self.__n += 1
+
+        
