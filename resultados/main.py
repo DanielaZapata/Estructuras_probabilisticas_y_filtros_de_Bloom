@@ -123,7 +123,7 @@ def ejecutar():
     tasa_error_objetivo = 0.01
 
     filtro = FiltroBloom(
-        n_esperado=len(registrados),
+        n=len(registrados),
         tasa_error=tasa_error_objetivo
     )
 
@@ -184,3 +184,166 @@ def ejecutar():
     print(f"Falsos positivos: {falsos_positivos}")
     print(f"Tasa real: {tasa_real:.4%}")
     print(f"Tasa teorica aproximada: {tasa_teorica:.4%}")
+
+    # --------------------------------------------------
+    # 4. COMPARAR TIEMPOS DE CONSULTA
+    # --------------------------------------------------
+
+    print("\n4. COMPARACIÓN DE TIEMPOS")
+
+    consultas = no_insertados
+
+    inicio = time.perf_counter()
+
+    for municipio in consultas:
+        filtro.contiene(municipio)
+
+    tiempo_bloom = time.perf_counter() - inicio
+
+    inicio = time.perf_counter()
+
+    for municipio in consultas:
+        municipio in conjunto
+
+    tiempo_set = time.perf_counter() - inicio
+
+    print(f"Consultas realizadas: {len(consultas)}")
+    print(f"Tiempo del filtro Bloom: {tiempo_bloom:.6f} segundos")
+    print(f"Tiempo del set: {tiempo_set:.6f} segundos")
+
+    # --------------------------------------------------
+    # 5. EXPERIMENTO CON DIFERENTES TAMAÑOS
+    # --------------------------------------------------
+
+    print("\n5. EFECTO DEL TAMAÑO DEL ARREGLO")
+
+    razones = [4, 6, 8, 10, 12, 16]
+
+    resultados_reales = []
+    resultados_teoricos = []
+
+    # Usamos una muestra para mantener razonable el tiempo de ejecución.
+    cantidad_muestra = min(
+        5000,
+        len(registrados),
+        len(no_insertados)
+    )
+
+    muestra_registrados = random.sample(
+        registrados,
+        cantidad_muestra
+    )
+
+    muestra_ausentes = random.sample(
+        no_insertados,
+        cantidad_muestra
+    )
+
+    n = len(muestra_registrados)
+
+    for razon in razones:
+
+        m = n * razon
+        k = max(1, round(razon * 0.693))
+
+        filtro_prueba = FiltroBloom(
+            n=n,
+            m=m,
+            k=k
+        )
+
+        for municipio in muestra_registrados:
+            filtro_prueba.agregar(municipio)
+
+        falsos = sum(
+            1
+            for municipio in muestra_ausentes
+            if filtro_prueba.contiene(municipio)
+        )
+
+        tasa_experimental = falsos / len(muestra_ausentes)
+
+        tasa_estimacion = filtro_prueba.prob_falso_positivo()
+
+        resultados_reales.append(tasa_experimental)
+        resultados_teoricos.append(tasa_estimacion)
+
+        print(
+            f"m/n={razon:2} | "
+            f"k={k:2} | "
+            f"Real={tasa_experimental:.4%} | "
+            f"Teórica={tasa_estimacion:.4%}"
+        )
+
+    # --------------------------------------------------
+    # 6. GENERAR GRÁFICA
+    # --------------------------------------------------
+
+    ruta_grafica = os.path.join(
+        CARPETA_RESULTADOS,
+        "comparacion_falsos_positivos.png"
+    )
+
+    plt.figure(figsize=(8, 5))
+
+    plt.plot(
+        razones,
+        resultados_reales,
+        "o-",
+        label="Tasa experimental",
+        color="#ff90ff"
+    )
+
+    plt.plot(
+        razones,
+        resultados_teoricos,
+        "s--",
+        label="Tasa teórica",
+        color="#6f63ff"
+    )
+
+    plt.xlabel("Bits por elemento (m/n)")
+    plt.ylabel("Probabilidad de falso positivo")
+    plt.title("Tamaño del filtro y falsos positivos")
+    plt.legend()
+    plt.grid(True, alpha=0.3)
+    plt.tight_layout()
+
+    plt.savefig(ruta_grafica, dpi=150)
+    plt.close()
+
+    print(f"\nGráfica guardada en: {ruta_grafica}")
+
+    # --------------------------------------------------
+    # 7. SIMULAR UNA CONSULTA INTERACTIVA
+    # --------------------------------------------------
+
+    print("\n7. CONSULTA INTERACTIVA")
+
+    nombre = normalizar(input(
+        "Escribe el nombre de un municipio para consultarlo: "
+    ))
+
+    if filtro.contiene(nombre):
+        print("El municipio posiblemente está registrado.")
+
+        if nombre in conjunto:
+            print("Confirmación: sí está en el conjunto real.")
+        else:
+            print(
+                "El filtro produjo un posible falso positivo. "
+                "Hay que confirmar en la base de datos."
+            )
+
+    else:
+        print("El municipio definitivamente no está en el filtro.")
+
+        if nombre in conjunto:
+            print(
+                "ATENCIÓN: este resultado contradice la pertenencia "
+                "al conjunto."
+            )
+
+
+if __name__ == "__main__":
+    ejecutar()
