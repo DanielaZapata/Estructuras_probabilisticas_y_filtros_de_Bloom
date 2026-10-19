@@ -41,3 +41,20 @@ def contiene(self, elemento):
                 return False
 
         return True
+
+# Cuenta cuántos bits están activados.
+def bits_encendidos(self):
+
+        return sum(bin(byte).count("1") for byte in self.bits)
+
+# Calcula la probabilidad teórica aproximada de falsos positivos
+def prob_falso_positivo(self):
+        
+        return (
+            1 - math.exp(-self.k * self.n / self.m)
+        ) ** self.k
+
+# Devuelve la memoria del arreglo en bytes
+def memoria_bytes(self):
+
+        return len(self.bits)
